@@ -76,7 +76,7 @@ func BenchmarkCipherFn_Crypt_2000000(b *testing.B) {
 	b.StopTimer()
 }
 
-func BenchmarkCipherFn_Crypt_100000000(b *testing.B) {
+func BenchmarkCipherFn_Crypt_40000000(b *testing.B) {
 	b.StartTimer()
 	for n := 0; n < b.N; n++ {
 		benchmarkCipherFn_Crypt(b, make([]byte, 40000000))
