@@ -1,9 +1,10 @@
-package noistr
+package oldstr
 
 import (
 	"encoding/binary"
 	"errors"
-	"fmt"
+	"reflect"
+	"unsafe"
 
 	"github.com/minio/sha256-simd"
 	"mleku.net/ec"
@@ -15,18 +16,20 @@ import (
 // appends it to out.
 //
 // todo: does it REEEEELLY have to return it AND copy it??? seems wasteful
-func (c *cipherFn) Decrypt(out []byte, n uint64,
+// todo: copy slice data pointer if it is empty or nil
+func (c cipherFn) Decrypt(out []byte, n uint64,
 	ad, in []byte) (plaintext []byte, err error) {
 
-	if len(in) < HeaderLen {
-		err = errors.New("message is shorter than the header")
+	log.I.S(n)
+	if len(in) < MessageOverhead {
+		err = errors.New("message is too short")
 		return
 	}
 	// get the message length
 	l := int(binary.BigEndian.Uint32(in[sha256.Size : sha256.Size+4]))
 	// check that this information is at least correct on the long side
 	if l+MessageOverhead < len(in) {
-		err = fmt.Errorf("message less than minimum, got %d, expected min %d",
+		err = log.E.Err("message less than minimum, got %d, expected min %d",
 			len(in), l+MessageOverhead)
 		return
 	}
@@ -46,7 +49,7 @@ func (c *cipherFn) Decrypt(out []byte, n uint64,
 	// verify encrypted message hash and pubkey matches the signature
 	messageHash := sha256.Sum256(in[HeaderLen : HeaderLen+l])
 	if !sig.Verify(messageHash[:], pub) {
-		err = fmt.Errorf("failed to verify message signature: pubkey: %0x",
+		err = log.E.Err("failed to verify message signature: pubkey: %0x",
 			pubBytes)
 		return
 	}
@@ -57,6 +60,14 @@ func (c *cipherFn) Decrypt(out []byte, n uint64,
 	if adl > 0 {
 		ad = in[offset : offset+adl]
 	}
-	out = append(out, plaintext...)
+	if out != nil || len(out) > 0 {
+		out = append(out, plaintext...)
+	} else {
+		// if there is nothing in 'out' then point it at 'plaintext' avoiding a
+		// copy
+		ptr1 := (*reflect.SliceHeader)(unsafe.Pointer(&out))
+		ptr2 := (*reflect.SliceHeader)(unsafe.Pointer(&plaintext))
+		ptr1.Data = ptr2.Data
+	}
 	return
 }

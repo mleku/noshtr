@@ -1,4 +1,4 @@
-package noistr
+package oldstr
 
 import (
 	"os"

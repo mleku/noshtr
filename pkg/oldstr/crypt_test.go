@@ -1,8 +1,7 @@
-package noistr
+package oldstr
 
 import (
 	"bytes"
-	"crypto/cipher"
 	"testing"
 
 	"github.com/minio/sha256-simd"
@@ -15,22 +14,19 @@ func TestCipherFn_Crypt(t *testing.T) {
 	if _, err = frand.Read(secret); chk.E(err) {
 		t.Fatal(err)
 	}
-	var ciph cipher.AEAD
-	if ciph, err = New().New(secret); chk.E(err) {
-		t.Fatal(err)
-	}
-	const msgSize = 1001
-	plaintext := make([]byte, msgSize)
+	var s [32]byte
+	copy(s[:], secret)
+	var c cipherFn
+	ciph := c.Cipher(s)
+	plaintext := make([]byte, 32)
 	if _, err = frand.Read(plaintext); chk.E(err) {
 		t.Fatal(err)
 	}
-	original := make([]byte, msgSize)
+	original := make([]byte, 32)
 	copy(original, plaintext)
-	encrypted := ciph.Seal(nil, nil, plaintext, nil)
+	encrypted := ciph.Encrypt(nil, 0, nil, plaintext)
 	var decrypted []byte
-	if decrypted, err = ciph.Open(nil, nil, encrypted, nil); chk.E(err) {
-		t.Fatal(err)
-	}
+	decrypted, err = ciph.Decrypt(nil, 0, nil, encrypted)
 	if bytes.Compare(original, decrypted) != 0 {
 		log.E.F("\n%3d %0x\n%3d %0x\n%3d %0x\n%3d %0x\n",
 			len(original), original,
@@ -48,23 +44,20 @@ func benchmarkCipherFn_Crypt(b *testing.B,
 	}
 	secret = make([]byte, sha256.Size)
 	if _, err = frand.Read(secret); chk.E(err) {
-		b.Fatal(err)
+		return
 	}
-	var ciph cipher.AEAD
-	if ciph, err = New().New(secret); chk.E(err) {
-		b.Fatal(err)
-	}
-	return ciph.Seal(nil, nil, plaintext, nil), secret
+	var s [32]byte
+	copy(s[:], secret)
+	var c cipherFn
+	ciph := c.Cipher(s)
+	return ciph.Encrypt(nil, 0, nil, plaintext), secret
 }
 
-func benchmarkCipherFn_Decrypt(b *testing.B, secret, ciphertext []byte) {
+func benchmarkCipherFn_Decrypt(b *testing.B, s, ciphertext []byte) {
 	b.SetBytes(int64(len(ciphertext)))
-	var err error
-	var ciph cipher.AEAD
-	if ciph, err = New().New(secret); chk.E(err) {
-		b.Fatal(err)
-	}
-	_, _ = ciph.Open(nil, nil, ciphertext, nil)
+	var c cipherFn
+	ciph := c.Cipher([32]byte(s))
+	_, _ = ciph.Decrypt(nil, 0, nil, ciphertext)
 }
 
 func BenchmarkCipherFn_Crypt_1000000(b *testing.B) {

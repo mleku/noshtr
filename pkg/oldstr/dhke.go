@@ -1,4 +1,4 @@
-package noistr
+package oldstr
 
 import (
 	"crypto/sha256"
@@ -12,29 +12,30 @@ import (
 
 type secp256k1DH struct{}
 
+var Secp256k1DH secp256k1DH
+
 // GenerateKeypair generates a new keypair using random as a source of
 // entropy.
 //
 // This implementation produces a BIP-340 style key pair with a 32 byte long
 // public key
-func (s *secp256k1DH) GenerateKeypair(rng io.Reader) (dhk noise.DHKey,
+func (s secp256k1DH) GenerateKeypair(rng io.Reader) (dhk noise.DHKey,
 	err error) {
 
-	b := make([]byte, secp256k1.SecKeyBytesLen)
-	if _, err = rng.Read(b); chk.E(err) {
+	var sk *ec.SecretKey
+	if sk, err = secp256k1.GeneratePrivateKeyFromRand(rng); chk.E(err) {
 		return
 	}
-	_, pk := ec.SecKeyFromBytes(b)
 	dhk = noise.DHKey{
-		Private: pk.SerializeCompressed(),
-		Public:  schnorr.SerializePubKey(pk),
+		Private: sk.Serialize(),
+		Public:  schnorr.SerializePubKey(sk.PubKey()),
 	}
 	return
 }
 
 // DH performs a Diffie-Hellman calculation between the provided private and
 // public keys and returns the result.
-func (s *secp256k1DH) DH(sec, pub []byte) (secret []byte, err error) {
+func (s secp256k1DH) DH(sec, pub []byte) (secret []byte, err error) {
 	sk := secp256k1.SecKeyFromBytes(sec)
 	var pk *secp256k1.PublicKey
 	// this expects a standard BIP-340 style 32 byte long public key (as used in
@@ -49,7 +50,7 @@ func (s *secp256k1DH) DH(sec, pub []byte) (secret []byte, err error) {
 }
 
 // DHLen is the number of bytes returned by DH.
-func (s *secp256k1DH) DHLen() (l int) { return sha256.Size }
+func (s secp256k1DH) DHLen() (l int) { return sha256.Size }
 
 // DHName is the name of the DH function.
-func (s *secp256k1DH) DHName() (name string) { return "secp256k1schnorr" }
+func (s secp256k1DH) DHName() (name string) { return "secp256k1schnorr" }
