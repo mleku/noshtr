@@ -2,15 +2,15 @@ package noistr
 
 import (
 	"github.com/minio/sha256-simd"
+	"github.com/mleku/btcec"
+	"github.com/mleku/btcec/schnorr"
+	"github.com/mleku/btcec/secp256k1"
 	"gitlab.com/yawning/nyquist.git/dh"
-	"mleku.net/ec"
-	"mleku.net/ec/schnorr"
-	"mleku.net/ec/secp256k1"
 )
 
 type secp256k1Keypair struct {
-	sec *ec.SecretKey
-	pub *ec.PublicKey
+	sec *btcec.SecretKey
+	pub *btcec.PublicKey
 }
 
 func (s secp256k1Keypair) MarshalBinary() (data []byte, err error) {
@@ -19,7 +19,7 @@ func (s secp256k1Keypair) MarshalBinary() (data []byte, err error) {
 }
 
 func (s secp256k1Keypair) UnmarshalBinary(data []byte) (err error) {
-	s.sec, s.pub = ec.SecKeyFromBytes(data)
+	s.sec, s.pub = btcec.SecKeyFromBytes(data)
 	return
 }
 
@@ -32,7 +32,7 @@ func (s secp256k1Keypair) Public() dh.PublicKey {
 func (s secp256k1Keypair) DH(publicKey dh.PublicKey) (secret []byte,
 	err error) {
 	dhb := publicKey.Bytes()
-	var dhpk *ec.PublicKey
+	var dhpk *btcec.PublicKey
 	if dhpk, err = schnorr.ParsePubKey(dhb); chk.E(err) {
 		return
 	}
@@ -42,7 +42,7 @@ func (s secp256k1Keypair) DH(publicKey dh.PublicKey) (secret []byte,
 }
 
 type secp256k1Pubkey struct {
-	pub *ec.PublicKey
+	pub *btcec.PublicKey
 }
 
 func (s secp256k1Pubkey) MarshalBinary() (data []byte, err error) {

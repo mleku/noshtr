@@ -5,12 +5,12 @@ import (
 	"os"
 
 	"github.com/minio/sha256-simd"
+	"github.com/mleku/btcec/lol"
+	"github.com/mleku/btcec/secp256k1"
 	"gitlab.com/yawning/nyquist.git/dh"
-	"mleku.net/ec/secp256k1"
-	"mleku.net/slog"
 )
 
-var log, chk = slog.New(os.Stderr)
+var log, chk, errorf = lol.New(os.Stderr)
 
 func init() {
 	dh.Register(Secp256k1)

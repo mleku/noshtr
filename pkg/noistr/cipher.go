@@ -7,11 +7,11 @@ import (
 	"encoding/binary"
 
 	"github.com/minio/sha256-simd"
+	"github.com/mleku/btcec"
+	"github.com/mleku/btcec/schnorr"
 	"github.com/templexxx/xorsimd"
 	"gitlab.com/yawning/nyquist.git/cipher"
 	"gitlab.com/yawning/nyquist.git/dh"
-	"mleku.net/ec"
-	"mleku.net/ec/schnorr"
 )
 
 func init() {
@@ -126,7 +126,7 @@ func (c *cipherSHA256CTR) Open(dst, _, src, ad []byte) (out []byte, err error) {
 	if sig, err = schnorr.ParseSignature(sigBytes); chk.E(err) {
 		return
 	}
-	var pub *ec.PublicKey
+	var pub *btcec.PublicKey
 	if pub, err = schnorr.ParsePubKey(pubBytes); chk.E(err) {
 		return
 	}

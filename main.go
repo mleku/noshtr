@@ -3,11 +3,11 @@ package main
 import (
 	"os"
 
-	"mleku.net/noshtr/app"
-	"mleku.net/slog"
+	"github.com/mleku/btcec/lol"
+	"github.com/mleku/noshtr/app"
 )
 
-var log, chk = slog.New(os.Stderr)
+var log, chk, errorf = lol.New(os.Stderr)
 
 func main() {
 	log.I.F("%s - %s", app.Name, app.Description)
